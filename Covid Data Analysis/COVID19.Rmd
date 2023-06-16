@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-cdata<-read.csv("C:/Users/ADMIN/Desktop/UW Academics/IMT573C/data/covid/countries-africa.csv.bz2",sep="\t")
+cdata<-read.csv("countries-africa.csv.bz2",sep="\t")
 africancountry<-unique(cdata$country)
 cat(" Ans1) The number of African countries listed are : ",length(unique(cdata$country)))
 ```
