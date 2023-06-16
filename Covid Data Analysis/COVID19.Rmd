@@ -1,1 +1,285 @@
+---
+title: "Data Analysis on Covid-19 dataset"
+output:
+  pdf_document: default
+  html_document: default
+chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Data Cleaning and Plotting
+
+### 1 Covid 19 Data
+
+#### 1.1 Load a single month of African Data
+
+```{r}
+
+cdata<-read.csv("C:/Users/ADMIN/Desktop/UW Academics/IMT573C/data/covid/countries-africa.csv.bz2",sep="\t")
+africancountry<-unique(cdata$country)
+cat(" Ans1) The number of African countries listed are : ",length(unique(cdata$country)))
+```
+
+#### Collecting all names of covid data files into character vector
+```{r}
+
+filenames<-list.files(path="C:/Users/ADMIN/Desktop/UW Academics/IMT573C/data/covid",
+                      pattern="^[c](\\w{4})[-][g](\\w{5})[_]([0-9]{2})[_]*")
+filenames
+cat("Ans2) The number of files is : ",length(filenames))
+```
+
+#### Load COVID data file for October 2021
+
+```{r}
+coviddata<-read.csv("C:/Users/ADMIN/Desktop/UW Academics/IMT573C/data/covid/covid-global_10-01-2020.csv.bz2",sep="\t")
+head(coviddata)
+colnames(coviddata)
+
+```
+
+#### Checking how many african countries in African Country list are in covid data
+```{r}
+afcountryincoviddata<- africancountry %in% coviddata$Country_Region    
+cat("Ans4) The number of African countries in the Covid data file for October 
+2021 is :",sum(afcountryincoviddata))
+
+```
+
+
+####  Finding which African countries are not present
+```{r}
+df<-africancountry[!(africancountry) %in% coviddata$Country_Region]      
+# using results of %in% and negating it
+df
+
+cat("Ans5)The number of African countries which are not present/match in the 
+Covid data file for October 2021 is:",sum(!afcountryincoviddata)," \n and 
+they are ", df)
+
+```
+
+
+#### From the above results displayed, we can see that there are some regions/countries included are islands around the african continent like Cape Verde, and some of these like Mayotte and Réunion are parts under the French while Saint Helena, Ascension and Tristan da Cunha is a British overseas territory. The two republics of Congo and Ivory coast are part of the African continent."
+
+
+
+
+#### Find name of countries written differently in covid data
+```{r}
+
+
+df2<-coviddata$Country_Region[grepl('Congo',coviddata$Country_Region,ignore.case=TRUE)]       
+# using grep to find matching string
+df2
+
+df3<-coviddata$Country_Region[grepl('cote',coviddata$Country_Region,ignore.case=TRUE)]
+df3
+
+cat("Ans7) In the covid data the two congos are witten as : ",df2,
+    " and ivory coast is written as ",df3)
+```
+
+
+#### Amending the list of African countires
+
+```{r}
+df4<-c(df2,df3)                    
+
+#df4 contains african contries which should be in covid data from the above
+#i.e ivory coast and 2 republic of congos
+
+df5<-africancountry[(africancountry) %in% coviddata$Country_Region]   
+# df6 contains the list of african countries which are present in covid data
+
+newafricancountrylist<-c(df5,df4)                                   
+#here newafricancountry list is combination of the african countries 
+#which are present and 3 countries which should be included
+newafricancountrylist
+cat("total number of countries after adding 2 congos and ivory coast are:",length(newafricancountrylist))
+
+
+```
+
+### 1.2 Load and merge all datasets
+
+#### Extracting date part from file name
+```{r}
+
+
+library(tidyverse)
+
+d3<- gsub("^[c](\\w{4})[-][g](\\w{5})[_]","",gsub(".[a-z]{3}.[a-z]{2}[0-9]{1}$","",filenames)) 
+# extracting only dates from filenames
+
+class(d3)                    # extracted part of dates is character
+dateformat<-as.Date(d3,"%m-%d-%Y")
+dateformat
+
+class(dateformat)           # after using as.Date class is Date
+
+# extracting only dates of 01 
+onlydates<-format(as.Date(dateformat,"%Y-%m-%d"),"%d")
+onlydates 
+
+firstmonthdate<-onlydates[1]      # extracting date of first filename
+cat("the date of first file : ",firstmonthdate)
+```
+
+
+#### Merging all data files
+
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+
+directory<-("C:/Users/ADMIN/Desktop/UW Academics/IMT573C/data/covid/")
+filenames 
+tempdata = NULL                      
+finaldataset = NULL                  
+
+for(i in filenames){
+   tempdata<-read.csv(paste0(directory,i),header=TRUE,sep="\t")        
+   # read files
+   colnames(tempdata)[colnames(tempdata)=='Country.Region']='Country_Region'    
+   #change the column Country.Region to Country_Region where its not
+   tempdata=tempdata %>% select(Country_Region,Deaths)                    
+   # Select required columns   
+   tempdata= tempdata %>% filter(tempdata$Country_Region %in% newafricancountrylist)   
+   # select african countries only
+   tempdata
+   Date=as.Date(gsub("^[c](\\w{4})[-][g](\\w{5})[_]","",
+                gsub(".[a-z]{3}.[a-z]{2}[0-9]{1}$","",i)),
+                format = "%m-%d-%Y")                                                      
+   # extract date
+   Yr=lubridate::year(Date)                                                                                              
+   Mnth=lubridate::month(Date)                                              
+   # seperate year and month
+   
+   tempdata= tempdata%>% mutate(Year=Yr,Month=Mnth,Date=Date)                                                                
+   finaldataset = rbind(finaldataset,tempdata)                                                                           
+}
+
+head(finaldataset)
+cat("The number of rows in final dataset are: ",nrow(finaldataset))                                                     
+
+
+```
+
+
+
+###  Display time series
+
+
+### Extracting population size
+
+
+```{r}
+
+pop1<-cdata %>% select(country,population)
+
+
+# population is in character and contains , 
+pop1$population<-as.integer(gsub(",","",pop1$population))       
+
+
+
+        
+```
+
+
+####  Computing death rate for each country
+
+
+```{r}
+cdata$country[cdata$country=='Democratic Republic of the Congo']<-'Congo (Kinshasa)'
+cdata$country[cdata$country=='Republic of the Congo']<-'Congo (Brazzaville)'
+cdata$country[cdata$country=='Ivory Coast']<-"Cote d'Ivoire"
+ 
+deathrate<-merge(finaldataset,cdata,by.x="Country_Region",by.y="country",all=FALSE) %>%
+            mutate(population=gsub(",","",population) %>% as.integer())
+
+class(deathrate$population)
+             
+
+                    
+
+datset2<-deathrate %>% group_by(Country_Region,population,) %>% 
+                      summarise(TotalDeaths=sum(Deaths), .groups = 'drop') %>% 
+                      mutate(Death_rate= (TotalDeaths/population)*1000000)
+head(datset2)
+```
+
+### Finding top 10 countries with highest death rate
+
+
+```{r}
+
+top10<-datset2[order(datset2$Death_rate,decreasing=TRUE),] %>% head(10)
+top10
+
+```
+
+
+###  Plot showing how death rate has grown in the 10 countries over time
+
+
+```{r}
+mergeddata<-merge(finaldataset,cdata,by.x="Country_Region",by.y="country",all=FALSE) 
+mergeddata<- mergeddata %>% mutate(population=gsub(",","",population) %>% as.integer()) 
+mergeddata= mergeddata %>% filter(Country_Region %in% unique(top10$Country_Region))   
+#consider only top10 countries
+mergeddata=mergeddata[order(mergeddata$Country_Region,mergeddata$Date),]              
+#arrange in ascending
+merge2= merge(mergeddata,top10,by.x="Country_Region",by.y="Country_Region")      
+
+
+del=c("Total_Deaths","Death_rate")
+merge2=merge2[,!names(merge2) %in% del]
+merge2= merge2 %>% mutate(MonthlyDeathRate=Deaths/population.x )                 
+#calculate monthly death rate
+
+g1<-ggplot(merge2,aes(x=Date,y=MonthlyDeathRate,group=Country_Region))+  geom_line(aes(color=Country_Region))+labs(x="Month",y="Death Rate")
+g1
+```
+
+
+### Calculating monthly deaths
+
+
+```{r}
+merge2<- merge2 %>% group_by(Country_Region) %>% mutate(Lag=lag(Deaths,order_by=Date))
+merge2
+merge2<-merge2 %>% mutate(Increase_in_death_rate=((Deaths-Lag)/population.x)*1000000)
+g2=ggplot(merge2,aes(x=Date,y=Increase_in_death_rate,group=Country_Region))+
+    geom_line(aes(color=Country_Region))+ labs(y="Increase in death rate",x= "Month")
+g2
+```
+
+#### Data analysis
+####  Namibia has faced the highest peak in monthly deaths somewhere after july 2021 and near August 2021
+
+### 1.4Think About this
+
+
+##### As per reports, despite having fragile health systems Africa had lower fatality ratio for Covid-19. The data for all-time cases and deaths for the US is 97 million and 1.06 million where for Africa total cases are 4.03 million and 102 thousand deaths. This shows that US would have been at the top and the graph would have been much higher and spread across for US. The Us would have been at the higher or upper end of the list. Many factor contribute to that, Africa being a country with world's youngest population with a median age of 18 years whereas in US is around 38 years. Weather conditions in the US vary across the country and are characterized more by lower temperature and humidity which contribute to the spread of the virus.It might also be the case that the cases and deaths were not reported in Africa however considering other factors, US would have a higher number.
+
+
+
+#### As Covid-19 pandemic was very sudden, there was a lot of ambiguity regarding the parameters to be considered for estimating the death/mortality rate. Data can be over-aggregated and can ignore important local and regional variations, economic disparities, health facilities and other factors which contribute . This can provide a skewed idea when there is comparison between states and countries. As Covid was a sudden and unpredictable disease the parameters accounted were wildly uncertain. Transparency of data source, analytic methods and models also contributes to the reliability of the data. 
+#### Overall the covid death reliability depends on a number of factos like,sources, parameters considered, integrity and consistency of the data, models applied on the data for extracting results, etc.
+
+
+#### The data used here was overall well-collected. The data considered islands and foreign territories as well under the African continent. The other data contained missing fields in columns like FIPS, Admin2 accounted for only US counties hence for countries from other regions the data was missing and this could have been skipped or included if the data was for US specifically. Similar was the case with Province State much of the data was missing. The combined key field was replication of the Country_Region for many rows of the data with few exceptions.While doing data manipulations and cleaning, a lot of the numeric fields were in character format. Under the year field for the african-country data, the dates were in irregular format which required manipulation for calculations.
+#### The data collected consisted of records for many countries includingt he island and territories. The data was detailed with dates and also contained columns for how many incidents took place and how many were fatal. it also contained longitudinal data which would have been helpful for geographical analysis. The data included recovered, active cases as well. Hence it was well collected and detailed.
+
+
+
+
 
