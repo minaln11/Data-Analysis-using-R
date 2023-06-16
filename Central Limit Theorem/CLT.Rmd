@@ -1,1 +1,330 @@
+---
+title: "Distributions and Central Limit Theorem"
+output:
+  pdf_document: default
+  html_document: default
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1)Compare differently distributed data
+
+1.1)Human Bodies
+
+1.1.1)Height is a ratio measure because there can be an absolute zero of height.Also it has quantifiable difference between values, can be measured in centimeters,inches,feet etc and cannot have a value below zero.
+Height is a continuous because it can take any value between two successive values, for example height of person can be 5 foot 7 and 1/2 inches.
+
+1.1.2)
+```{r}
+data<-read.csv("fatherson.csv.bz2",sep="\t")
+head(data)
+
+cat("\nThe number of observations in the data:",nrow(data))
+cat("\nThe number of missing values present in data :",sum(is.na(data)))
+cat("\n There are no unreasonable values as such")
+```
+
+
+1.1.3)
+```{r}
+
+#Calculation of mean, median, standard deviation and range for father's height
+mean_fheight<-mean(data$fheight)
+
+median_fheight<-median(data$fheight)
+
+sd_fheight<-sd(data$fheight)
+
+range_fheight<-max(data$fheight)-min(data$fheight)
+
+
+cat("\n Father's height")
+cat("\n Mean : ",mean_fheight)
+cat("\n Median : ",median_fheight)
+cat("\n Standard Deviation : ",sd_fheight)
+cat("\n Range : ",range_fheight)
+
+#Calculation of mean, median, standard deviation and range for son's height
+mean_sheight<-mean(data$sheight)
+
+median_sheight<-median(data$sheight)
+
+sd_sheight<-sd(data$sheight)
+
+range_sheight<-max(data$sheight)-min(data$sheight)
+
+
+cat("\n Son's height")
+cat("\n Mean : ",mean_sheight)
+cat("\n Median : ",median_sheight)
+cat("\n Standard Deviation : ",sd_sheight)
+cat("\n Range : ",range_sheight)
+
+```
+For father's and son's height the median is greater than mean by a ~ 0.1-0.2 cm .
+The standard deviation of father's height is less than standard deviation son's height by 0.178 cm
+which means father's height is comparatively more clustered around mean.
+The range for father's height is lesser than range of son's height by 8.7cm which means that son's height has larger maximum height value or lower minimum value of height (as range is difference between max and min value)
+
+
+1.1.4)
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+
+#Father's height
+fh_hist<-ggplot(data,aes(x=fheight)) +labs(x="Father's Height",y="Frequency")+
+  geom_histogram(bins=10,color="black",fill="white")+
+  geom_vline(xintercept=mean(data$fheight),col="red")+
+  geom_vline(xintercept=median(data$fheight),col="green")
+ 
+fh_hist
+
+#Son's height
+
+sh_hist<-ggplot(data,aes(x=sheight))+labs(x="Son's Height",y="Frequency") +         geom_histogram(bins=10,color="black",fill="pink")+
+  geom_vline(xintercept=mean(data$sheight),col="red")+
+  geom_vline(xintercept=median(data$sheight),col="green")
+sh_hist
+```
+The distribution resembles a normal distribution as it has a bell-shaped symmetrical curve centered around mean
+
+
+##Section 1.2
+
+
+##1.2 Human Influence
+
+1.2.1) It is ordinal category of measure. Number of citations will be  grouped into categories (based of number of times a paper is cited) it can be absolute zero but not negative. The number of citations are expected to be discrete and positive as there will be whole concrete numbers and not fractional(i.e. number of citations can be 0 , 3 ,4 and -3,-4 or 3.5 dont make sense)
+
+1.2.2)
+```{r}
+human_inf<-read.csv("C:/Users/ADMIN/Desktop/UW Academics/IMT573C/data/mag-in-citations.csv.bz2")
+head(human_inf)
+
+cat("\n The number of observations in data is :",nrow(human_inf))
+
+cat("\n The number of missing values are :",sum(is.na(human_inf)))
+
+cat("\n The data does not seem to have values that are unreasonable or wrong")
+
+cit_range<- max(human_inf$citations)-min(human_inf$citations)
+cat("\n Range of citations: the minimum number of citations is ",min(human_inf$citations)," and maximum no of citations is ",max(human_inf$citations)," hence range is ", cit_range)
+
+```
+
+1.2.3)
+```{r}
+
+mean_cit<-mean(human_inf$citations)
+
+median_cit<-median(human_inf$citations)
+
+mode_cit<-modeest::mlv(human_inf$citations,method="mfv")
+
+sd_cit<-sd(human_inf$citations)
+
+range_cit<-max(human_inf$citations)-min(human_inf$citations)
+
+
+
+cat("\n Citations")
+cat("\n Mean : ",mean_cit)
+cat("\n Median :",median_cit)
+cat("\n Mode : ",mode_cit)
+cat("\n Standard Deviation : ",sd_cit)
+cat("\n Range : ",range_cit)
+
+```
+The mean is greater than the median(by 12) and mode (by ~15.6). The standard deviation is very larger than the mean (by 62.78)
+
+
+
+1.2.4)
+```{r}
+
+cit_hist<-ggplot(human_inf,aes(x=log(citations)))+labs(x="Citations",y="Frequency") +     geom_histogram(bins=30,color="black",fill="white")+
+  geom_vline(xintercept=mean(human_inf$citations),col="red")+
+   geom_vline(xintercept=median(human_inf$citations),col="green")+
+  geom_vline(xintercept=(modeest::mlv(human_inf$citations,method="mfv")),col="blue")
+  
+cit_hist
+```
+
+
+1.2.5)For human bodies the values are continuous and ratio scale,the values of mean,median,standard deviation show that the data is clustered around mean and histogram looks more like normal distribution.The mean and median values are also close which suggests data set has symmetrical distribution. 
+
+For influence, the values are discrete and ordinal, the standard deviation is higher than that of human bodies data which means that data is spread out, the high range indicates the difference between highest and lowest value, hence the drop will be more. The difference in mean and median for influence data shows through the graph that the distribution is not normal.
+
+
+
+
+##2 EXPLORE CENTRAL LIMIT THEOREM
+
+2.1)
+
+```{r}
+
+# for expected value probability is needed
+s<-sample(c(-1,1),10,replace=TRUE,prob=c(0.5,0.5))
+s
+
+#  for expected value
+sum=0
+newfunc<-function(x){
+   sum=0
+   p=1/length(x)
+  for(i in 1:length(x)){
+    sum=sum+x[i]*p
+  }
+  return(sum)
+}
+
+#to calculate variance
+varfunc2<-function(x){
+    t1=newfunc(x^2)
+    var=t1-((newfunc(x))^2)
+     return(var)
+}
+
+E=newfunc(s)
+E
+variance=varfunc2(s)
+variance
+```
+
+
+2.2)selecting number of repetitions 1000
+
+2.3)
+```{r}
+random=sample(c(-1,1),1000,replace=TRUE)
+
+length(random)
+
+plot1<-hist(random,breaks=30)
+
+```
+The shape of the histogram is bimodal(as it has two peaks at ends)
+
+2.4)
+```{r}
+
+mean_random=mean(random)
+mean_random
+
+var_random=var(random)
+var_random
+
+
+#with theoretical , with function written above
+mean_theor=newfunc(random)
+mean_theor
+
+var_theor=varfunc2(random)
+var_theor
+```
+The mean using function mean() and computed using function(expected value) are the same. The variance calculated using function var() and that computed using function written above show minor difference.
+
+
+2.5)
+```{r}
+m1<-matrix(sample(c(-1,1),size=1000*2,replace=TRUE),nrow=1000,ncol=2)
+pairmean=rowMeans(m1)
+
+plot1<-hist(pairmean,breaks=30)
+
+```
+The outline of histogram looks like a normal distribution
+
+
+2.6)
+```{r}
+
+mean_pairmean=mean(pairmean)
+mean_pairmean
+
+var_pairmean=var(pairmean)
+var_pairmean
+
+#theoretical values
+
+E2=newfunc(pairmean)
+E2
+
+var2=varfunc2(pairmean)
+var2
+
+cat("\n Using function mean() and var()")
+cat("\n Mean :",mean_pairmean," Variance : ",var_pairmean)
+
+cat("\n Using theoretical expected value function and variance function")
+cat("\n Mean : ", E2," Variance :", var2)
+```
+
+
+
+2.7)
+```{r}
+
+m2<-matrix(sample(c(-1,1),1000*5,replace=TRUE),nrow=1000,ncol=5)
+
+m5<-rowMeans(m2)
+
+plot2<-hist(m5,breaks=30)
+
+
+mean(m5)
+var(m5)
+
+#theoretical
+newfunc(m5)
+varfunc2(m5)
+
+#more histogram bars are getting plotted, the graph is becoming more close-knit 
+```
+
+2.8)
+```{r}
+m3 <-matrix(sample(c(-1,1),1000*25,replace=TRUE),nrow=1000,ncol=25)
+
+
+m25<-rowMeans(m3)
+
+plot2<-hist(m25,breaks=30)
+
+mean(m25)
+var(m25)
+
+
+#theoretical
+newfunc(m25)
+varfunc2(m25)
+```
+
+2.9)
+```{r}
+m4 <-matrix(sample(c(-10:10),1000*1000,replace=TRUE),nrow=1000,ncol=1000)
+
+m1000 <-rowMeans(m4)
+
+plot2<-hist(m1000,breaks=30)
+
+mean(m1000)
+var(m1000)
+
+#theoretical
+newfunc(m1000)
+varfunc2(m1000)
+
+```
+
+2.10)
+As the tuple size increases the histogram becomes more normal/ looks more like normal distribution. 
+
+2.11)
+The above computations proves the Central Limit Theorem. We initially started with a population/random variables of comparatively smaller size with a mean and standard deviation. It showed a histogram with 2 peaks at its ends or bimodal, however as the size of the sample increased  we computed the means of these samples the histogram became more and more normal.
+This is pertaining to central limit theorem which states that even if the original values themselves are not normally distributed , the distribution of 'sample means' approximates/tends to a normal distribution  as the sample size gets larger( i.e S=1 two peaks S=2,S=5,S=25, for S=1000 the histogram looked like normal distribution)
